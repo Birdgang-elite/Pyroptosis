@@ -1,0 +1,49 @@
+rm(list=ls())
+path <- getwd()
+setwd(path) 
+library(tidyverse)
+library(limma)
+library(ggpubr)
+
+UCSC_LUAD_exprs_RS_all <- read.table('UCSC_LUAD_exprs_RS_all.txt',sep="\t",header=T,check.names=F)
+LUAD_TMB <- read.table('TCGA_LUAD_TMB.txt',sep="\t",header=T,check.names=F)
+
+LUAD_TMB1 <- LUAD_TMB %>%
+  mutate(Sample=substr(LUAD_TMB$Tumor_Sample_Barcode,1,15))
+UCSC_LUAD_RS_TMB <- merge(UCSC_LUAD_exprs_RS_all,LUAD_TMB1,by='Sample') 
+UCSC_LUAD_RS_TMB1 <- UCSC_LUAD_RS_TMB %>%
+  avereps(ID = UCSC_LUAD_RS_TMB$Sample) %>%
+  as.data.frame()
+
+UCSC_LUAD_RS_TMB1$Risk_score_LH <- factor(UCSC_LUAD_RS_TMB1$Risk_score_LH,levels=c(0,1),labels=c('Low','High'))
+UCSC_LUAD_RS_TMB1$total_perMB <- as.numeric(UCSC_LUAD_RS_TMB1$total_perMB)
+UCSC_LUAD_RS_TMB1$total_perMB_log <- as.numeric(UCSC_LUAD_RS_TMB1$total_perMB_log)
+UCSC_LUAD_RS_TMB1$Risk_score <- as.numeric(UCSC_LUAD_RS_TMB1$Risk_score)
+
+
+
+#不同组间TMB差异
+p <- ggplot(UCSC_LUAD_RS_TMB1,aes(Risk_score_LH,total_perMB, fill = Risk_score_LH)) + 
+  geom_boxplot(outlier.shape = 21,color = "black") + 
+  #scale_fill_manual(values = palette1[c(2,4)])+ 
+  theme_bw() + 
+  labs(x = NULL, y = "Tumor Mutation Burden per MB") +
+  theme(legend.position = "top") + 
+  theme(axis.text.x = element_text(angle=0,hjust = 1),
+        axis.text = element_text(color = "black",size = 12))+
+  stat_compare_means()
+ggsave('TMB_difference.pdf',plot = p,width = 7,height = 7)  
+
+
+#TMB与Risk score的相关性分析
+p1 <- ggplot(UCSC_LUAD_RS_TMB1,aes(x = Risk_score, y = total_perMB))+
+  geom_point()+
+  geom_smooth(method = "lm",color = "black", fill = "lightgray")+
+  theme_bw()+
+  theme(panel.grid=element_blank())+
+  labs(x = "Risk score", y = "Tumor Mutation Burden per MB") +
+  stat_cor(method = "pearson",
+           label.x = 1.4,label.y = 30)
+ggsave('TMB_correlation.pdf',plot = p1,width = 7,height = 7)  
+
+

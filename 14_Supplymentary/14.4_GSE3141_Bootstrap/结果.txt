@@ -1,0 +1,3 @@
+Bootstrap重抽样评估结果：
+平均C-index： 0.643 
+C-index标准差： 0.055 

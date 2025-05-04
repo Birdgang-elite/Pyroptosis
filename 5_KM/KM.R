@@ -1,0 +1,215 @@
+##########################################################
+##根据选取的数据集，对代码进行增删即可，无特殊参数需要设置
+##源代码中包括GSE30219、GSE31210、GSE50081、GSE68465和UCSC
+##########################################################
+rm(list=ls())
+path <- getwd()
+setwd(path)
+library("survival")
+library("survminer")
+library('ggplot2')
+library('patchwork')
+library(tidyverse)
+
+#GSE3141
+GSE3141 <- paste0(path,'\\GSE3141\\GSE3141_exprs_RS_test.txt') %>%
+  read.table(sep="\t",header=T,check.names=F)
+
+fit <- survfit(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE3141) 
+plot(fit) 
+km=ggsurvplot(fit, data = GSE3141,
+              #surv.median.line = "hv", 
+              palette=c("blue", "red"), size=1,
+              legend.labs=c("Risk_score_Low","Risk_score_High"), 
+              ylab="Overall survival rate (%)",xlab = " Time (Days)", 
+              legend=c(0.8,0.25),
+              censor.shape = 3,censor.size = 0.5,conf.int = TRUE, 
+              break.x.by = 1000, 
+              risk.table = TRUE,tables.height = 0.25,
+              tables.theme = theme_classic(),
+              ggtheme = theme_classic()
+)
+res_cox<-coxph(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE3141)
+km$plot = km$plot + ggplot2::annotate("text",x = 800, y = 0.15,
+                                      label = paste("HR=",round(summary(res_cox)$conf.int[1],2))) + 
+  ggplot2::annotate("text",x = 800, y = 0.1,
+                    label = paste("(","95%CI: ",round(summary(res_cox)$conf.int[3],2),"-",
+                                  round(summary(res_cox)$conf.int[4],2),")",sep = ""))+
+  ggplot2::annotate("text",x = 800, y = 0.05,
+                    label = paste("Log-rank P=",round(summary(res_cox)$coef[5],3)))
+
+splots <- list()
+splots[[1]] <- km
+splots[[2]] <- km
+splots_merge <- arrange_ggsurvplots(splots,print=TRUE)
+ggsave(paste0(path,'\\GSE3141\\OS_GSE3141.pdf'),splots_merge,width=12,height=5)
+
+#GSE30219
+GSE30219 <- paste0(path,'\\GSE30219\\GSE30219_exprs_RS_test.txt') %>%
+  read.table(sep="\t",header=T,check.names=F)
+
+fit <- survfit(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE30219) 
+plot(fit) 
+km=ggsurvplot(fit, data = GSE30219,
+              #surv.median.line = "hv", 
+              palette=c("blue", "red"), size=1,
+              legend.labs=c("Risk_score_Low","Risk_score_High"), 
+              ylab="Overall survival rate (%)",xlab = " Time (Days)", 
+              legend=c(0.8,0.25),
+              censor.shape = 3,censor.size = 0.5,conf.int = TRUE, 
+              break.x.by = 1000, 
+              risk.table = TRUE,tables.height = 0.25,
+              tables.theme = theme_classic(),
+              ggtheme = theme_classic()
+)
+res_cox<-coxph(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE30219)
+km$plot = km$plot + ggplot2::annotate("text",x = 800, y = 0.15,
+                                      label = paste("HR=",round(summary(res_cox)$conf.int[1],2))) + 
+  ggplot2::annotate("text",x = 800, y = 0.1,
+                    label = paste("(","95%CI: ",round(summary(res_cox)$conf.int[3],2),"-",
+                                  round(summary(res_cox)$conf.int[4],2),")",sep = ""))+
+  ggplot2::annotate("text",x = 800, y = 0.05,
+                    label = paste("Log-rank P=",round(summary(res_cox)$coef[5],3)))
+
+splots <- list()
+splots[[1]] <- km
+splots[[2]] <- km
+splots_merge <- arrange_ggsurvplots(splots,print=TRUE)
+ggsave(paste0(path,'\\GSE30219\\OS_GSE30219.pdf'),splots_merge,width=12,height=5)
+
+
+#GSE31210
+GSE31210 <- paste0(path,'\\GSE31210\\GSE31210_exprs_RS_test.txt') %>%
+  read.table(sep="\t",header=T,check.names=F)
+
+fit <- survfit(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE31210) 
+plot(fit) 
+km=ggsurvplot(fit, data = GSE31210,
+              #surv.median.line = "hv", 
+              palette=c("blue", "red"), size=1,
+              legend.labs=c("Risk_score_Low","Risk_score_High"), 
+              ylab="Overall survival rate (%)",xlab = " Time (Days)", 
+              legend=c(0.8,0.25),
+              censor.shape = 3,censor.size = 0.5,conf.int = TRUE, 
+              break.x.by = 1000, 
+              risk.table = TRUE,tables.height = 0.25,
+              tables.theme = theme_classic(),
+              ggtheme = theme_classic()
+)
+res_cox<-coxph(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE31210)
+km$plot = km$plot + ggplot2::annotate("text",x = 800, y = 0.15,
+                                      label = paste("HR=",round(summary(res_cox)$conf.int[1],2))) + 
+  ggplot2::annotate("text",x = 800, y = 0.1,
+                    label = paste("(","95%CI: ",round(summary(res_cox)$conf.int[3],2),"-",
+                                  round(summary(res_cox)$conf.int[4],2),")",sep = ""))+
+  ggplot2::annotate("text",x = 800, y = 0.05,
+                    label = paste("Log-rank P=",round(summary(res_cox)$coef[5],3)))
+
+splots <- list()
+splots[[1]] <- km
+splots[[2]] <- km
+splots_merge <- arrange_ggsurvplots(splots,print=TRUE)
+ggsave(paste0(path,'\\GSE31210\\OS_GSE31210.pdf'),splots_merge,width=12,height=5)
+
+#GSE41271
+GSE41271 <- paste0(path,'\\GSE41271\\GSE41271_exprs_RS_test.txt') %>%
+  read.table(sep="\t",header=T,check.names=F)
+
+fit <- survfit(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE41271) 
+plot(fit) 
+km=ggsurvplot(fit, data = GSE41271,
+              #surv.median.line = "hv", 
+              palette=c("blue", "red"), size=1,
+              legend.labs=c("Risk_score_Low","Risk_score_High"), 
+              ylab="Overall survival rate (%)",xlab = " Time (Days)", 
+              legend=c(0.8,0.25),
+              censor.shape = 3,censor.size = 0.5,conf.int = TRUE, 
+              break.x.by = 1000, 
+              risk.table = TRUE,tables.height = 0.25,
+              tables.theme = theme_classic(),
+              ggtheme = theme_classic()
+)
+res_cox<-coxph(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE41271)
+km$plot = km$plot + ggplot2::annotate("text",x = 800, y = 0.15,
+                                      label = paste("HR=",round(summary(res_cox)$conf.int[1],2))) + 
+  ggplot2::annotate("text",x = 800, y = 0.1,
+                    label = paste("(","95%CI: ",round(summary(res_cox)$conf.int[3],2),"-",
+                                  round(summary(res_cox)$conf.int[4],2),")",sep = ""))+
+  ggplot2::annotate("text",x = 800, y = 0.05,
+                    label = paste("Log-rank P=",round(summary(res_cox)$coef[5],3)))
+
+splots <- list()
+splots[[1]] <- km
+splots[[2]] <- km
+splots_merge <- arrange_ggsurvplots(splots,print=TRUE)
+ggsave(paste0(path,'\\GSE41271\\OS_GSE41271.pdf'),splots_merge,width=12,height=5)
+
+#GSE50081
+GSE50081 <- paste0(path,'\\GSE50081\\GSE50081_exprs_RS_test.txt') %>%
+  read.table(sep="\t",header=T,check.names=F)
+
+fit <- survfit(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE50081) 
+plot(fit) 
+km=ggsurvplot(fit, data = GSE50081,
+              #surv.median.line = "hv", 
+              palette=c("blue", "red"), size=1,
+              legend.labs=c("Risk_score_Low","Risk_score_High"), 
+              ylab="Overall survival rate (%)",xlab = " Time (Days)", 
+              legend=c(0.8,0.25),
+              censor.shape = 3,censor.size = 0.5,conf.int = TRUE, 
+              break.x.by = 1000, 
+              risk.table = TRUE,tables.height = 0.25,
+              tables.theme = theme_classic(),
+              ggtheme = theme_classic()
+)
+res_cox<-coxph(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE50081)
+km$plot = km$plot + ggplot2::annotate("text",x = 800, y = 0.15,
+                                      label = paste("HR=",round(summary(res_cox)$conf.int[1],2))) + 
+  ggplot2::annotate("text",x = 800, y = 0.1,
+                    label = paste("(","95%CI: ",round(summary(res_cox)$conf.int[3],2),"-",
+                                  round(summary(res_cox)$conf.int[4],2),")",sep = ""))+
+  ggplot2::annotate("text",x = 800, y = 0.05,
+                    label = paste("Log-rank P=",round(summary(res_cox)$coef[5],3)))
+
+splots <- list()
+splots[[1]] <- km
+splots[[2]] <- km
+splots_merge <- arrange_ggsurvplots(splots,print=TRUE)
+ggsave(paste0(path,'\\GSE50081\\OS_GSE50081.pdf'),splots_merge,width=12,height=5)
+
+
+#ucsc_all
+UCSC_all <- paste0(path,'\\UCSC_LUAD\\UCSC_LUAD_exprs_RS_all.txt') %>%
+  read.table(sep="\t",header=T,check.names=F)
+
+fit <- survfit(Surv(os_time, os_status) ~ Risk_score_LH, data=UCSC_all) 
+plot(fit) 
+km=ggsurvplot(fit, data = UCSC_all,
+              #surv.median.line = "hv", 
+              palette=c("blue", "red"), size=1,
+              legend.labs=c("Risk_score_Low","Risk_score_High"), 
+              ylab="Overall survival rate (%)",xlab = " Time (Days)", 
+              legend=c(0.8,0.25),
+              censor.shape = 3,censor.size = 0.5,conf.int = TRUE, 
+              break.x.by = 1000, 
+              risk.table = TRUE,tables.height = 0.25,
+              tables.theme = theme_classic(),
+              ggtheme = theme_classic()
+)
+res_cox<-coxph(Surv(os_time, os_status) ~ Risk_score_LH, data=UCSC_all)
+km$plot = km$plot + ggplot2::annotate("text",x = 800, y = 0.15,
+                                      label = paste("HR=",round(summary(res_cox)$conf.int[1],2))) + 
+  ggplot2::annotate("text",x = 800, y = 0.1,
+                    label = paste("(","95%CI: ",round(summary(res_cox)$conf.int[3],2),"-",
+                                  round(summary(res_cox)$conf.int[4],2),")",sep = ""))+
+  ggplot2::annotate("text",x = 800, y = 0.05,
+                    label = paste("Log-rank P=",round(summary(res_cox)$coef[5],3)))
+
+splots <- list()
+splots[[1]] <- km
+splots[[2]] <- km
+splots_merge <- arrange_ggsurvplots(splots,print=TRUE)
+ggsave(paste0(path,'\\UCSC_LUAD\\OS_UCSC_all.pdf'),splots_merge,width=12,height=5)
+
+
+

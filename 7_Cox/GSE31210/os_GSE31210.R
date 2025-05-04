@@ -1,0 +1,149 @@
+rm(list=ls())
+path <- getwd()
+setwd(path)
+library("survival")
+library("survminer")
+
+
+GSE31210_exprs_RS_test <- read.table("GSE31210_exprs_RS_test.txt",sep="\t",header=T,check.names=F) 
+LUAD <- read.table("LUAD.txt",sep="\t",header=T,check.names=F)
+LUAD1  <- LUAD[,c('Sample','Age','Gender','Stage','Smoking')]
+
+data <- merge(GSE31210_exprs_RS_test,LUAD1,by='Sample',all = F)
+data$Age <- factor(data$Age,levels=c(0,1),labels=c('≤60yrs','>60yrs'))
+data$Gender <- factor(data$Gender,levels=c(0,1),labels=c('Female','Male'))
+data$Stage <- factor(data$Stage,levels=c(1,2),labels=c('I','II'))
+data$Smoking <- factor(data$Smoking,levels=c(0,1),labels=c('Non-smoker','Smoker'))
+write.table(data,"data_GSE31210.txt",sep="\t",row.names=F,quote=F, na="")
+
+
+
+cli_exp <- data
+UCoxR=data.frame()
+coxf<-function(x){
+  fmla <- as.formula(Surv(os_time,os_status)~cli_exp[,x])
+  unicox <- coxph(fmla,data=cli_exp)
+}
+for(a in c('Age','Gender','Stage','Smoking','Risk_score')){  
+  unicox=coxf(a)
+  UCox = summary(unicox)
+  UCoxR=rbind(UCoxR,cbind(Factor=a,HR=round(UCox$coefficients[,"exp(coef)"],3),
+                          'CI95'=paste0(round(UCox$conf.int[,3:4],3),collapse = '-'),
+                          'P Value'=round(UCox$coefficients[,"Pr(>|z|)"],3),
+                          'C index'=round(UCox$concordance["C"],3)))
+}
+write.table(UCoxR,"UCoxR_os_GSE31210.txt",sep="\t",row.names=F,quote=F)
+
+
+UCoxR$`P Value`=as.numeric(as.character(UCoxR$`P Value`)) 
+paste0(UCoxR$Factor,collapse = '+')  
+mulcox <- coxph(Surv(os_time,os_status) ~ Age+Gender+Stage+Smoking+Risk_score,
+                data=cli_exp)  
+MCox=summary(mulcox)
+Lower=round(MCox$conf.int[,3],3)
+Upper=round(MCox$conf.int[,4],3)
+CI=paste0(Lower,'-',Upper)
+MCoxR = data.frame()
+MCoxR=data.frame(Factor=UCoxR$Factor,  
+                 HR=round(MCox$coefficients[,"exp(coef)"],3),
+                 'CI95'=CI,
+                 'P Value'=round(MCox$coefficients[,"Pr(>|z|)"],3),
+                 'C index'=round(MCox$concordance["C"],3))
+write.table(MCoxR,"MCoxR_os_GSE31210.txt",sep="\t",row.names=F,quote=F)
+
+
+Final<- merge.data.frame(UCoxR,MCoxR,by='Factor',all=F,sort=F)
+write.table(Final,"Final_os_GSE31210.txt",sep="\t",row.names=F,quote=F,na='')
+
+
+rm(list=ls())
+path <- getwd()
+setwd(path)
+UCoxR_os<-read.table("UCoxR_os_GSE31210.txt",sep="\t",header=T,check.names=F)  
+UCoxR_os$`P Value` <- ifelse(UCoxR_os$`P Value`==0,'<0.001',UCoxR_os$`P Value`) 
+Low <- as.numeric(unlist(lapply(UCoxR_os$CI95, function(x){
+  strsplit(as.character(x),"-")[[1]][1]
+})))
+Up <- as.numeric(unlist(lapply(UCoxR_os$CI95, function(x){
+  strsplit(as.character(x),"-")[[1]][2]
+})))
+Uni_os=data.frame(Factor=UCoxR_os$Factor,  
+                  'Hazard Ratio (95% CI)'=paste0(UCoxR_os$HR,'(',UCoxR_os$CI95,')'),
+                  'P value'=UCoxR_os$`P Value`,
+                  HR=UCoxR_os$HR,
+                  Lower=Low,
+                  Upper=Up)
+colnames(Uni_os) <- c('Factor','Hazard Ratio (95% CI)','P value','','','')
+write.table(Uni_os,"Uni_os_GSE31210.txt",sep="\t",row.names=F,quote=F)
+
+
+library('forestplot')
+test<-read.table("Uni_os_GSE31210.txt",sep="\t",header=F,check.names=F)
+pdf("Uni_os_GSE31210.pdf", onefile = FALSE)
+forestplot(labeltext = as.matrix(test[,1:3]), 
+           hrzl_lines =list("2"= gpar(lwd=1, columns=1:3, col = "#000044")),
+           mean = test$V4, 
+           lower = test$V5, 
+           upper = test$V6, 
+           is.summary=c(T,F,F,F,F,F,F,F,F),
+           zero = 1, 
+           boxsize = 0.4,
+           lineheight = unit(10,'mm'),
+           colgap = unit(3,'mm'),
+           lwd.zero = 2,
+           lwd.ci = 2,
+           col=fpColors(box='#458B00',summary="#8B008B",lines = 'black',zero = '#7AC5CD'),
+           xlab="Hazard Ratio",
+           lwd.xaxis=2,
+           lty.ci = "solid",
+           graph.pos = 4)
+dev.off()
+
+
+
+
+rm(list=ls())
+path <- getwd()
+setwd(path)
+MCoxR_os<-read.table("MCoxR_os_GSE31210.txt",sep="\t",header=T,check.names=F)  
+MCoxR_os$P.Value <- ifelse(MCoxR_os$P.Value==0,'<0.001',MCoxR_os$P.Value) 
+Low <- as.numeric(unlist(lapply(MCoxR_os$CI95, function(x){
+  strsplit(as.character(x),"-")[[1]][1]
+})))
+Up <- as.numeric(unlist(lapply(MCoxR_os$CI95, function(x){
+  strsplit(as.character(x),"-")[[1]][2]
+})))
+Mul_os=data.frame(Factor=MCoxR_os$Factor,  
+                  'Hazard Ratio (95% CI)'=paste0(MCoxR_os$HR,'(',MCoxR_os$CI95,')'),
+                  'P value'=MCoxR_os$P.Value,
+                  HR=MCoxR_os$HR,
+                  Lower=Low,
+                  Upper=Up)
+colnames(Mul_os) <- c('Factor','Hazard Ratio (95% CI)','P value','','','')
+write.table(Mul_os,"Mul_os_GSE31210.txt",sep="\t",row.names=F,quote=F)
+
+
+library('forestplot')
+test<-read.table("Mul_os_GSE31210.txt",sep="\t",header=F,check.names=F)
+pdf("Mul_os_GSE31210.pdf", onefile = FALSE)
+forestplot(labeltext = as.matrix(test[,1:3]),  
+           hrzl_lines =list("2"= gpar(lwd=1, columns=1:3, col = "#000044")),
+           mean = test$V4, 
+           lower = test$V5, 
+           upper = test$V6, 
+           is.summary=c(T,F,F,F,F,F,F,F,F),
+           
+           zero = 1, 
+           boxsize = 0.4, 
+           lineheight = unit(10,'mm'),
+           colgap = unit(3,'mm'),
+           lwd.zero = 2,
+           lwd.ci = 2,
+           col=fpColors(box='#458B00',summary="#8B008B",lines = 'black',zero = '#7AC5CD'),
+           
+           xlab="Hazard Ratio",
+           lwd.xaxis=2,
+           lty.ci = "solid",
+           graph.pos = 4)
+dev.off()
+

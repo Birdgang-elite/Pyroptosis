@@ -1,0 +1,60 @@
+rm(list=ls())
+path <- getwd()
+setwd(path)
+library("survival")
+library("survminer")
+library('ggplot2')
+library('patchwork')
+library(tidyverse)
+
+#GSE3141
+GSE3141 <- paste0(path,'\\GSE3141\\GSE3141_exprs_RS_test.txt') %>%
+  read.table(sep="\t",header=T,check.names=F)
+
+fit <- survfit(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE3141) 
+plot(fit) 
+km=ggsurvplot(fit, data = GSE3141,
+              #surv.median.line = "hv", 
+              palette=c("blue", "red"), size=1,
+              legend.labs=c("Risk_score_Low","Risk_score_High"), 
+              ylab="Overall survival rate (%)",xlab = " Time (Days)", 
+              legend=c(0.8,0.25),
+              censor.shape = 3,censor.size = 0.5,conf.int = TRUE, 
+              break.x.by = 1000, 
+              risk.table = TRUE,tables.height = 0.25,
+              tables.theme = theme_classic(),
+              ggtheme = theme_classic()
+)
+res_cox<-coxph(Surv(os_time, os_status) ~ Risk_score_LH, data=GSE3141)
+km$plot = km$plot + ggplot2::annotate("text",x = 800, y = 0.15,
+                                      label = paste("HR=",round(summary(res_cox)$conf.int[1],2))) + 
+  ggplot2::annotate("text",x = 800, y = 0.1,
+                    label = paste("(","95%CI: ",round(summary(res_cox)$conf.int[3],2),"-",
+                                  round(summary(res_cox)$conf.int[4],2),")",sep = ""))+
+  ggplot2::annotate("text",x = 800, y = 0.05,
+                    label = paste("Log-rank P=",round(summary(res_cox)$coef[5],3)))
+
+
+# 进行Bootstrap重抽样评估
+n_boot <- 1000  # 设置Bootstrap抽样次数
+c_index_boot <- numeric(n_boot)  # 用于存储每次抽样得到的C-index
+
+set.seed(123)
+for (i in 1:n_boot) {
+  # 有放回地抽样
+  boot_sample <- GSE3141[sample(nrow(GSE3141), replace = TRUE), ]
+  
+  # 进行Cox回归分析
+  cox_fit_boot <- coxph(Surv(os_time, os_status) ~ Risk_score, data = boot_sample)
+  
+  # 计算C-index
+  c_index_boot[i] <- cox_fit_boot$concordance['concordance']
+}
+
+# 输出Bootstrap结果
+mean_c_index_boot <- mean(c_index_boot)
+sd_c_index_boot <- sd(c_index_boot)
+
+cat("Bootstrap重抽样评估结果：\n")
+cat(paste("平均C-index：", round(mean_c_index_boot, 3), "\n"))
+cat(paste("C-index标准差：", round(sd_c_index_boot, 3), "\n"))
